@@ -1,0 +1,13 @@
+Package: mininetpbm
+Type: Package
+Title: Write NETPBM PBM/PGM/PPM Images
+Version: 0.1.0
+Author: Mike
+Maintainer: mikefc <mikefc@coolbutuseless.com>
+Description: Simple/fast ways to write matrices and arrays to NETPBM PGM/PPM images.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
+Depends:
+  R (>= 2.10)
