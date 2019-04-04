@@ -89,16 +89,57 @@ system("convert man/figures/mini3.ppm man/figures/mini3.png")
 # Benchmark
 
 ```{r fig.width = 8, warning=FALSE}
-res <- bench::mark(
-  write_pnm(int_arr, filename = "colour_cbu.ppm"),
-  png::writePNG(int_arr, target = 'colour_png.png'),
-  jpeg::writeJPEG(int_arr, target = 'colour_jpeg.jpg'),
-  pixmap::write.pnm(pixmap::pixmapRGB(int_arr), file = 'colour_pixmap.ppm'),
-  rtiff::writeTiff(pixmap::pixmapRGB(int_arr), fn = 'colour_rtiff.tiff'),
-  imager::save.image(imager::as.cimg(int_arr), file = "colour_cimg.png"),
-  imager::save.image(imager::as.cimg(int_arr), file = "colour_cimg.jpg"),
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Setup a test matrix and array to output
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+N       <- 255
+int_vec <- rep.int(seq(N), N) %% 256
+int_mat <- matrix(int_vec, N, N, byrow = TRUE)
+dbl_mat <- int_mat/255
+
+r <- int_mat
+g <- t(int_mat)
+b <- int_mat[, rev(seq(ncol(int_mat)))]
+
+int_arr <- array(c(r, g, b), dim = c(N, N, 3))
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Integer matrix saved to image
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+grey_res <- bench::mark(
+  netpbm = write_pnm(int_mat, 'working/grey_netpbm.pgm'),
+  png  = {out_mat <- int_mat / max(int_mat); png::writePNG(  out_mat, target = 'working/grey_png.png' )},
+  jpeg = {out_mat <- int_mat / max(int_mat); jpeg::writeJPEG(out_mat, target = 'working/grey_jpeg.jpg')},
+  pixmap::write.pnm(pixmap::pixmapGrey(int_mat), file = 'working/grey_pixmap.ppm'),
+  rtiff::writeTiff(int_mat, fn = 'working/grey_rtiff.tiff'),
+  imager::save.image(imager::as.cimg(int_mat), file = "working/grey_cimg.png"),
+  imager::save.image(imager::as.cimg(int_mat), file = "working/grey_cimg.jpg"),
   check = FALSE
 )
+
+grey_res
+
+plot(grey_res) + theme_bw(15)
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Write an RGB integer array to image
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+colour_res <- bench::mark(
+  netpbm = write_pnm(int_arr, 'working/colour_netpbm.ppm'),
+  png  = {out_arr <- int_arr / max(int_arr); png::writePNG(out_arr, target = 'working/colour_png.png')},
+  jpeg = {out_arr <- int_arr / max(int_arr); jpeg::writeJPEG(out_arr, target = 'working/colour_jpeg.jpg')},
+  pixmap::write.pnm(pixmap::pixmapRGB(int_arr), file = 'working/colour_pixmap.ppm'),
+  rtiff::writeTiff(pixmap::pixmapRGB(int_arr), fn = 'working/colour_rtiff.tiff'),
+  imager::save.image(imager::as.cimg(int_arr), file = "working/colour_cimg.png"),
+  imager::save.image(imager::as.cimg(int_arr), file = "working/colour_cimg.jpg"),
+  check = FALSE
+)
+
+colour_res
+
+plot(colour_res) + theme_bw(15)
 ```
 
 ```{r echo = FALSE}

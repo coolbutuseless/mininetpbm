@@ -95,6 +95,7 @@ write_pnm <- function(image, filename, nbytes = 1L) {
 
 
 
+
 if (interactive()) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Setup a test matrix and array to output
@@ -110,44 +111,16 @@ if (interactive()) {
 
   int_arr <- array(c(r, g, b), dim = c(N, N, 3))
 
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # Integer matrix saved to image
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  grey_res <- bench::mark(
-    png::writePNG(int_mat, target = 'working/grey_png.png'),
-    jpeg::writeJPEG(int_mat, target = 'working/grey_jpeg.jpg'),
-    pixmap::write.pnm(pixmap::pixmapGrey(int_mat), file = 'working/grey_pixmap.ppm'),
-    rtiff::writeTiff(int_mat, fn = 'working/grey_rtiff.tiff'),
-    imager::save.image(imager::as.cimg(int_mat), file = "working/grey_cimg.png"),
-    imager::save.image(imager::as.cimg(int_mat), file = "working/grey_cimg.jpg"),
-    check = FALSE
-  )
 
-  grey_res
+  carr <- matrix_to_array(int_mat)
+  # write_pnm(int_arr, "working/vir.ppm")
+  png::writePNG(carr, "working/vir.png")
 
-  plot(grey_res) + theme_bw(15)
-
-
-
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # Write an RGB integer array to image
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  colour_res <- bench::mark(
-    png::writePNG(int_arr, target = 'working/colour_png.png'),
-    jpeg::writeJPEG(int_arr, target = 'working/colour_jpeg.jpg'),
-    pixmap::write.pnm(pixmap::pixmapRGB(int_arr), file = 'working/colour_pixmap.ppm'),
-    rtiff::writeTiff(pixmap::pixmapRGB(int_arr), fn = 'working/colour_rtiff.tiff'),
-    imager::save.image(imager::as.cimg(int_arr), file = "working/colour_cimg.png"),
-    imager::save.image(imager::as.cimg(int_arr), file = "working/colour_cimg.jpg"),
-    check = FALSE
-  )
-
-  colour_res
-
-  plot(colour_res) + theme_bw(15)
 
 
 }
+
+
 
 
 
