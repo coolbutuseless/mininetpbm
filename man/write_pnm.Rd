@@ -2,33 +2,21 @@
 % Please edit documentation in R/pnm.R
 \name{write_pnm}
 \alias{write_pnm}
-\alias{write_pnm_from_matrix}
-\alias{write_pnm_from_array}
-\title{Write values as a PGM/PPM file (includes checking of input data for sanity)}
+\title{Write a PGM/PPM image from an array or matrix}
 \usage{
-write_pnm(values, nrow, ncol, filename, nbytes = 1L, overwrite = FALSE)
-
-write_pnm_from_matrix(values, filename, nbytes = 1L)
-
-write_pnm_from_array(values, filename, nbytes = 1L)
+write_pnm(image, filename, nbytes = 1L)
 }
 \arguments{
-\item{values}{Integer values. Length must be nrow * ncol}
-
-\item{nrow, ncol}{Dimensions of output image}
+\item{image}{Integer values. Length must be nrow * ncol}
 
 \item{filename}{Filename to write to.}
 
 \item{nbytes}{Number of bytes per colour compoment. Default 1L. Otherwise 2}
-
-\item{overwrite}{Overwrite the output file if it already exists? default: FALSE}
 }
 \description{
-Write values as a PGM/PPM file (includes checking of input data for sanity)
+If values are double, then scaled to [0,255] or [0,65535] depending upon \code{nbytes}
 }
 \details{
-If values are double, then scaled to [0,255] or [0,65535] depending upon \code{nbytes}
-
 \itemize{
 \item{\code{write_pnm}} - write a vector of values to either a PGM or PPM file.  If
 the number of values supplied exactly matches the dimensions of the image, a PGM file

@@ -1,9 +1,7 @@
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#' Write values as a PGM/PPM file (includes checking of input data for sanity)
-#'
-#' Write values as a PGM/PPM file (includes checking of input data for sanity)
+#' Write a PGM/PPM image from an array or matrix
 #'
 #' If values are double, then scaled to [0,255] or [0,65535] depending upon \code{nbytes}
 #'
@@ -15,85 +13,141 @@
 #' \item{\code{write_pnm_array}} - write a 3D array of values as a PPM file
 #' }
 #'
-#' @param values Integer values. Length must be nrow * ncol
-#' @param nrow,ncol Dimensions of output image
+#' @param image Integer values. Length must be nrow * ncol
 #' @param filename Filename to write to.
 #' @param nbytes Number of bytes per colour compoment. Default 1L. Otherwise 2
-#' @param overwrite Overwrite the output file if it already exists? default: FALSE
 #'
 #' @export
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-write_pnm <- function(values, nrow, ncol, filename, nbytes = 1L, overwrite = FALSE) {
+write_pnm <- function(image, filename, nbytes = 1L) {
 
-  if (!is.atomic(values)) {
-    stop("'values' must a vector")
-  } else if (file.exists(filename) && !overwrite) {
-    stop("Output file '", filename, "' already exists and 'overwrite = FALSE'")
-  } else if (anyNA(values) || !is.numeric(values)) {
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Rearrange matrix and array values into the correct order
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  if (is.matrix(image)) {
+    dims        <- dim(image)
+    values      <- t(image)
+    dim(values) <- NULL
+    nrow        <- dims[1]
+    ncol        <- dims[2]
+    magic       <- 'P5'  # single-channel image
+  } else if (is.array(image)) {
+    dims <- dim(image)
+
+    if (length(dims) == 3L && dims[3] == 3L) {
+      values <- as.vector(aperm(image, c(3L, 2L, 1L)))
+      magic  <- 'P6' # three-channel image
+    } else if (length(dims) == 2L) {
+      values      <- t(image)
+      dim(values) <- NULL
+      magic       <- 'P5' # single-channel image
+    } else {
+      stop("Array must be 2D or 3D only")
+    }
+
+    nrow <- dims[2]
+    ncol <- dims[1]
+  }
+
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # More sanity checks
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  if (anyNA(values) || !is.numeric(values)) {
     stop("'values' must by numeric and not contain NAs")
-  } else if (length(values) == nrow * ncol) {
-    size  <- 1L
-    magic <- "P5\n"
-  } else if (length(values) == nrow * ncol * 3) {
-    size  <- 3L
-    magic <- "P6\n"
-  } else {
-    stop("Size must be either 1x or 3x nrow * ncol")
   }
 
-  max_value <- 255L
-  if (nbytes != 1L) {
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Use 'nbytes' to set the maximum value for the image
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  if (nbytes == 1) {
+    max_value <- 255L
+  } else if (nbytes == 2) {
     max_value <- 65535L
+  } else {
+    stop("Only supports nbytes = 1 or 2")
   }
 
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Scale double values into the correct integer range
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   if (is.double(values)) {
     values <- as.integer(max_value * (values - min(values))/(max(values) - min(values)))
   } else if (!is.integer(values)) {
-    stop("'values' must be of type integer")
+    stop("'image' must be of type integer or double")
   } else if (min(values) < 0L || max(values) > max_value) {
     stop("'values' must all be in range [0, ", max_value, "]")
   }
 
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Open a connection and write the data
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   con <- file(filename, open = 'wb')
   on.exit(close(con))
-  writeChar(paste(magic, ncol, nrow, "\n", max_value, "\n"), con = con, eos = NULL)
-  writeBin(values, con = con, size = 1L)
+  writeChar(paste0(magic, "\n", ncol, ' ', nrow, "\n", max_value, "\n"), con = con, eos = NULL)
+  writeBin(values, con = con, size = nbytes)
 }
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#' @rdname write_pnm
-#' @export
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-write_pnm_from_matrix <- function(values, filename, nbytes = 1L) {
-  if (!is.matrix(values)) {
-    stop("Input 'obj' must be a matrix")
-  }
-  dims        <- dim(values)
-  values      <- t(values)
-  dim(values) <- NULL
-  write_pnm(values, dims[1], dims[2], filename, nbytes = nbytes)
+
+
+if (interactive()) {
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Setup a test matrix and array to output
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  N       <- 255
+  int_vec <- rep.int(seq(N), N) %% 256
+  int_mat <- matrix(int_vec, N, N, byrow = TRUE)
+  dbl_mat <- int_mat/255
+
+  r <- int_mat
+  g <- t(int_mat)
+  b <- int_mat[, rev(seq(ncol(int_mat)))]
+
+  int_arr <- array(c(r, g, b), dim = c(N, N, 3))
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Integer matrix saved to image
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  grey_res <- bench::mark(
+    png::writePNG(int_mat, target = 'working/grey_png.png'),
+    jpeg::writeJPEG(int_mat, target = 'working/grey_jpeg.jpg'),
+    pixmap::write.pnm(pixmap::pixmapGrey(int_mat), file = 'working/grey_pixmap.ppm'),
+    rtiff::writeTiff(int_mat, fn = 'working/grey_rtiff.tiff'),
+    imager::save.image(imager::as.cimg(int_mat), file = "working/grey_cimg.png"),
+    imager::save.image(imager::as.cimg(int_mat), file = "working/grey_cimg.jpg"),
+    check = FALSE
+  )
+
+  grey_res
+
+  plot(grey_res) + theme_bw(15)
+
+
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Write an RGB integer array to image
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  colour_res <- bench::mark(
+    png::writePNG(int_arr, target = 'working/colour_png.png'),
+    jpeg::writeJPEG(int_arr, target = 'working/colour_jpeg.jpg'),
+    pixmap::write.pnm(pixmap::pixmapRGB(int_arr), file = 'working/colour_pixmap.ppm'),
+    rtiff::writeTiff(pixmap::pixmapRGB(int_arr), fn = 'working/colour_rtiff.tiff'),
+    imager::save.image(imager::as.cimg(int_arr), file = "working/colour_cimg.png"),
+    imager::save.image(imager::as.cimg(int_arr), file = "working/colour_cimg.jpg"),
+    check = FALSE
+  )
+
+  colour_res
+
+  plot(colour_res) + theme_bw(15)
+
+
 }
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#' @rdname write_pnm
-#' @export
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-write_pnm_from_array <- function(values, filename, nbytes = 1L) {
-  dims <- dim(values)
-
-  if (!is.matrix(values)) {
-    stop("Input 'values' must be an array")
-  } else if (length(dims) == 3L & dims[3] == 3L) {
-    values <- as.vector(aperm(values, c(3L, 2L, 1L)))
-  } else if (length(dims) == 2L) {
-    values <- t(values)
-    dim(values) <- NULL
-  } else {
-    stop("Array must be 2D or 3D")
-  }
-
-  write_pnm(values, dims[2], dims[1], filename, nbytes = nbytes)
-}
 

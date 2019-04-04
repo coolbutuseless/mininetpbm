@@ -35,104 +35,83 @@ You can install the released version of mininetpbm from [github](https://github.
 remotes::install_github('coolbutuseless/mininetpbm')
 ```
 
-<!-- ## Outputting a 1D vector as a PGM file -->
+## Outputting a 1D vector as a PGM file
 
 
-<!-- ```{r example} -->
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- # Create a integer vector with length NxN, and a matrix version as well -->
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- N       <- 255 -->
-<!-- int_vec <- rep.int(seq(N), N) %% 256 -->
-<!-- int_mat <- matrix(int_vec, N, N, byrow = TRUE) -->
-<!-- dbl_mat <- int_mat/255 -->
-
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- # write the vector as a PGM image file -->
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- write_pgm(int_vec, N, N, "man/figures/mini.pgm") -->
-<!-- ``` -->
-
-<!-- ```{r echo = FALSE} -->
-<!-- system("convert man/figures/mini.pgm man/figures/mini.png") -->
-<!-- ``` -->
-
-<!-- ![](man/figures/mini.png) -->
+```{r example}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create an integer matrix and integer vector
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+N       <- 255
+int_vec <- rep.int(seq(N), N) %% 256
+int_mat <- matrix(int_vec, N, N, byrow = TRUE)
+dbl_mat <- int_mat/255
 
 
-<!-- ## Outputting a 2D matrix as a PGM file -->
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create a colourful integer array (RGB)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+r <- int_mat
+g <- t(int_mat)
+b <- int_mat[, rev(seq(ncol(int_mat)))]
 
-<!-- ```{r} -->
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- # write the matrix as a PGM image file -->
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- write_pgm_from_matrix(int_mat, "man/figures/mini2.pgm") -->
-<!-- ``` -->
+int_arr <- array(c(r, g, b), dim = c(N, N, 3))
+  
+  
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# write the vector as a PGM image file
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+write_pnm(int_mat, "man/figures/mini.pgm")
+```
 
-<!-- ```{r echo = FALSE} -->
-<!-- system("convert man/figures/mini.pgm man/figures/mini2.png") -->
-<!-- ``` -->
+```{r echo = FALSE}
+system("convert man/figures/mini.pgm man/figures/mini.png")
+```
 
-<!-- ![](man/figures/mini2.png) -->
+![](man/figures/mini.png)
 
 
 
-<!-- ## Outputting a 3D array as a PPM file -->
+## Outputting a 3D array as a PPM file
 
-<!-- ```{r} -->
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- # Create integer matrices for R, G, B planes -->
-<!-- # Stack into a 3D array -->
-<!-- #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- N       <- 255 -->
-<!-- int_vec <- rep.int(seq(N), N) %% 256 -->
-<!-- int_mat <- matrix(int_vec, nrow = N, ncol = N, byrow = TRUE) -->
+```{r}
+write_pnm(int_arr, "man/figures/mini3.ppm")
+```
 
-<!-- r <- int_mat -->
-<!-- g <- t(int_mat) -->
-<!-- b <- int_mat[, rev(seq(ncol(int_mat)))] -->
+```{r echo = FALSE}
+system("convert man/figures/mini3.ppm man/figures/mini3.png")
+```
 
-<!-- int_arr <- array(c(r, g, b), dim = c(N, N, 3)) -->
-<!-- write_ppm_from_array(int_arr, "man/figures/mini3.ppm") -->
-<!-- ``` -->
-
-<!-- ```{r echo = FALSE} -->
-<!-- system("convert man/figures/mini3.ppm man/figures/mini3.png") -->
-<!-- ``` -->
-
-<!-- ![](man/figures/mini3.png) -->
+![](man/figures/mini3.png)
 
 
 
-<!-- # Bonus - write a greyscale vector mapped to a `viridis` colour map -->
+# Benchmark
 
-<!-- ```{r} -->
-<!-- write_ppm_with_viridis(int_vec, N, N, "man/figures/mini4.ppm", pal = 'inferno') -->
-<!-- ``` -->
+```{r fig.width = 8, warning=FALSE}
+res <- bench::mark(
+  write_pnm(int_arr, filename = "colour_cbu.ppm"),
+  png::writePNG(int_arr, target = 'colour_png.png'),
+  jpeg::writeJPEG(int_arr, target = 'colour_jpeg.jpg'),
+  pixmap::write.pnm(pixmap::pixmapRGB(int_arr), file = 'colour_pixmap.ppm'),
+  rtiff::writeTiff(pixmap::pixmapRGB(int_arr), fn = 'colour_rtiff.tiff'),
+  imager::save.image(imager::as.cimg(int_arr), file = "colour_cimg.png"),
+  imager::save.image(imager::as.cimg(int_arr), file = "colour_cimg.jpg"),
+  check = FALSE
+)
+```
 
-<!-- ```{r echo = FALSE} -->
-<!-- system("convert man/figures/mini4.ppm man/figures/mini4.png") -->
-<!-- ``` -->
+```{r echo = FALSE}
+summary(res) %>%
+  select(expression, mean, median, `itr/sec`, mem_alloc) %>%
+  knitr::kable(caption = "Benchmark results")
 
-<!-- ![](man/figures/mini4.png) -->
-
-
-<!-- ```{r} -->
-<!-- N       <- 499 -->
-<!-- int_vec <- rep.int(seq(N), N) %% 256 -->
-<!-- int_mat <- matrix(int_vec, N, N, byrow = TRUE) -->
-<!-- dbl_mat <- int_mat/255 -->
-
-
-<!-- res <- bench::mark( -->
-<!--   write_pgm_from_matrix(int_mat, "man/figures/mini2.pgm"), -->
-<!--   png::writePNG(dbl_mat, "man/figures/mini2.png") -->
-<!-- ) -->
-
-<!-- res -->
-
-<!-- plot(res) -->
-<!-- ``` -->
+plot(res) + 
+  theme_bw(10) + 
+  theme(
+    legend.position = 'bottom'
+  )
+```
 
 
 
