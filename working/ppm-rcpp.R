@@ -72,8 +72,8 @@ rcpp    = write_ppm_rcpp(dbl_arr, N, N, here::here("working/images/col-rcpp.ppm"
 grey_res <- NULL
 grey_res <- bench::mark(
   rcpp    = write_ppm_rcpp(dbl_arr, N, N, here::here("working/images/col-rcpp.ppm")),
-  png    = png::writePNG(  dbl_arr, target = './col.png'),
-  jpeg   = jpeg::writeJPEG(dbl_arr, target = './col.jpg'),
+  png    = png::writePNG(  dbl_arr, target = here::here("working/images/col-png.png")),
+  jpeg   = jpeg::writeJPEG(dbl_arr, target = here::here("working/images/col-jpeg.jpg")),
   min_time = 1,
   check = FALSE
 )

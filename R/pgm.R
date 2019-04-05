@@ -37,7 +37,7 @@ write_pgm <- function(image, filename) {
 
   con <- file(filename, open = 'wb')
   on.exit(close(con))
-  writeChar(paste("P5\n", nrow(image), ncol(image), "\n255\n"), con = con, eos = NULL)
+  writeChar(paste0("P5\n", nrow(image), ' ', ncol(image), "\n255\n"), con = con, eos = NULL)
   writeBin(values, con = con, size = 1L)
 }
 
