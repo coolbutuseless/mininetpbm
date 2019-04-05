@@ -92,8 +92,8 @@ system("convert man/figures/mini3.ppm man/figures/mini3.png")
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setup a test matrix and array to output
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-N       <- 1024
-int_vec <- rep.int(seq(N), N) %% 256
+N       <- 255
+int_vec <- rep.int(seq(N), N) %% 256L
 int_mat <- matrix(int_vec, N, N, byrow = TRUE)
 dbl_mat <- int_mat/255
 
@@ -103,7 +103,8 @@ dbl_arr <- remap_with_viridis(dbl_mat)
 # Integer matrix saved to image
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 grey_res <- bench::mark(
-  netpbm = write_pnm(      dbl_mat,          'working/grey.pgm'),
+  netpbm1 = write_pgm(int_mat, "working/gray1.pgm"),
+  netpbm2 = write_pnm(      dbl_mat,          'working/grey.pgm'),
   png    = png::writePNG(  dbl_mat, target = 'working/grey.png'),
   jpeg   = jpeg::writeJPEG(dbl_mat, target = 'working/grey.jpg'),
   check = FALSE
