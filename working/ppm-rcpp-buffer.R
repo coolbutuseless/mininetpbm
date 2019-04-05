@@ -11,7 +11,7 @@ cppFunction('
 
 int write_ppm_rcpp(NumericVector x, int nrow, int ncol) {
 
-  int buffer_size = nrow * ncol * 3;
+  int buffer_size = 10 * ncol * 3;
   unsigned char uc[buffer_size];
 
   double *v = x.begin();
@@ -37,21 +37,23 @@ int write_ppm_rcpp(NumericVector x, int nrow, int ncol) {
     }
 
     if (out >= buffer_size) {
-      std::cout << "write" << std::cout;
       outfile.write((char *)uc, sizeof(unsigned char) * out);
       out = 0;
     }
 
   }
 
-  //outfile.write((char *)uc, sizeof(unsigned char) * nrow * ncol * 3);
+  if (out >= 0) {
+    outfile.write((char *)uc, sizeof(unsigned char) * out);
+  }
+
   outfile.close();
 
-  return 1;
+  return 2;
 }')
 
 
-N       <- 1024
+N       <- 256
 int_vec <- rep.int(seq(N), N) %% 256
 int_mat <- matrix(int_vec, N, N, byrow = TRUE)
 dbl_mat <- int_mat/255

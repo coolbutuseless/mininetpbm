@@ -45,6 +45,11 @@ int write_ppm_rcpp(NumericVector x, int nrow, int ncol) {
 
   }
 
+
+  if (out >= 0) {
+    outfile.write(reinterpret_cast<const char*>(&uc), sizeof(float) * out);
+  }
+
   outfile.close();
 
   return 1;
