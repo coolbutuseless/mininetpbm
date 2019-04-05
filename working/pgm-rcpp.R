@@ -2,7 +2,7 @@ rm(list = ls())
 
 library(Rcpp)
 
-double_to_char <- NULL
+
 
 cppFunction('
 #include <fstream>
