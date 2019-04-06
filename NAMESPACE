@@ -2,5 +2,5 @@
 
 export(remap_with_pal)
 export(remap_with_viridis)
-export(write_pgm)
+export(write_pgm_r)
 export(write_pnm)

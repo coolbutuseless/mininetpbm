@@ -25,7 +25,7 @@
 #'
 #' @export
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-write_pgm <- function(image, filename) {
+write_pgm_r <- function(image, filename) {
 
   # values <- t(image)
   values <- t(image)
